@@ -160,7 +160,7 @@ namespace LifeSymulator.Model
             foreach (var (x, y) in animals)
             {
                 if (next[x, y].HasPlant) continue; // has food, stays
-                MoveAnimal(old, next, x, y);
+                MoveAnimal(next, x, y);
             }
 
             // 3. animals eat plants on their field
@@ -180,7 +180,8 @@ namespace LifeSymulator.Model
             Cells = next;
         }
 
-        void MoveAnimal(Cell[,] old, Cell[,] next, int x, int y)
+        // checks the new grid so two animals never end up on the same field
+        void MoveAnimal(Cell[,] next, int x, int y)
         {
             // a) plant right next to it
             var options = new List<(int, int)>();
@@ -190,7 +191,7 @@ namespace LifeSymulator.Model
                 {
                     if (dx == 0 && dy == 0) continue;
                     int nx = Wrap(x + dx, Width), ny = Wrap(y + dy, Height);
-                    if (next[nx, ny].HasPlant && !old[nx, ny].HasAnimal)
+                    if (next[nx, ny].HasPlant && !next[nx, ny].HasAnimal)
                         options.Add((nx, ny));
                 }
             }
@@ -226,7 +227,7 @@ namespace LifeSymulator.Model
                     if (bdx == 0 && bdy == 0) break;
                     int sx = Math.Sign(bdx), sy = Math.Sign(bdy);
                     int nx = Wrap(cx + sx, Width), ny = Wrap(cy + sy, Height);
-                    if (old[nx, ny].HasAnimal) break;
+                    if (next[nx, ny].HasAnimal) break;
                     cx = nx; cy = ny;
                     bdx -= sx; bdy -= sy;
                 }
@@ -245,7 +246,7 @@ namespace LifeSymulator.Model
                 {
                     if (dx == 0 && dy == 0) continue;
                     int nx = Wrap(x + dx, Width), ny = Wrap(y + dy, Height);
-                    if (!old[nx, ny].HasAnimal)
+                    if (!next[nx, ny].HasAnimal)
                         options.Add((nx, ny));
                 }
             }

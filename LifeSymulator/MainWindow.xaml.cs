@@ -102,8 +102,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void btnNew_Click(object sender, RoutedEventArgs e)
     {
-        int w = int.Parse(txtWidth.Text);
-        int h = int.Parse(txtHeight.Text);
+        int w, h;
+        if (!int.TryParse(txtWidth.Text, out w) || !int.TryParse(txtHeight.Text, out h))
+        {
+            MessageBox.Show("Size must be a number");
+            return;
+        }
+        if (w < 50 || h < 50 || w > 300 || h > 300)
+        {
+            MessageBox.Show("Size must be between 50 and 300");
+            return;
+        }
         var rules = world.Rules;
         world = new World(w, h);
         world.Rules = rules;
