@@ -55,6 +55,36 @@
             <TextBlock Text="Speed" Margin="2,5,2,0"/>
             <Slider x:Name="sliderSpeed" Minimum="1" Maximum="30" Value="5" ValueChanged="sliderSpeed_ValueChanged" Margin="2"/>
             <TextBlock x:Name="txtGeneration" Text="Generation: 0" Margin="2"/>
+            <TextBlock Text="Rules" FontWeight="Bold" Margin="2,10,2,2"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="30"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                    <RowDefinition/><RowDefinition/><RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="R" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="txtR" Margin="1"/>
+                <TextBlock Grid.Row="1" Text="W" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="txtW" Margin="1"/>
+                <TextBlock Grid.Row="2" Text="B" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="txtB" Margin="1"/>
+                <TextBlock Grid.Row="3" Text="P" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="txtP" Margin="1"/>
+                <TextBlock Grid.Row="4" Text="Z" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="txtZ" Margin="1"/>
+                <TextBlock Grid.Row="5" Text="M" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="txtM" Margin="1"/>
+                <TextBlock Grid.Row="6" Text="L" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="6" Grid.Column="1" x:Name="txtL" Margin="1"/>
+            </Grid>
+            <Button x:Name="btnApply" Content="Apply rules" Click="btnApply_Click" Margin="2"/>
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <Button x:Name="btnSave" Content="Save" Click="btnSave_Click" Width="100" Margin="2"/>
+                <Button x:Name="btnLoad" Content="Load" Click="btnLoad_Click" Width="100" Margin="2"/>
+            </StackPanel>
             <TextBlock Text="Statistics" FontWeight="Bold" Margin="2,10,2,2"/>
             <TextBlock x:Name="txtPlants" Text="Plants: 0" Margin="2,0"/>
             <TextBlock x:Name="txtAnimals" Text="Animals: 0" Margin="2,0"/>

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using LifeSymulator.Model;
 
 namespace LifeSymulator;
@@ -31,6 +32,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         world = new World(50, 50);
         CreateBoard();
+        ShowRules();
         timer.Interval = TimeSpan.FromMilliseconds(200);
         timer.Tick += Timer_Tick;
     }
@@ -152,6 +154,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         btnClear.IsEnabled = !running;
         btnRandom.IsEnabled = !running;
         btnStep.IsEnabled = !running;
+        btnLoad.IsEnabled = !running;
+        btnApply.IsEnabled = !running;
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
@@ -170,5 +174,69 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         world.Step();
         generation++;
         RefreshBoard();
+    }
+
+    void ShowRules()
+    {
+        txtR.Text = Rules.SetToString(world.Rules.R);
+        txtW.Text = Rules.SetToString(world.Rules.W);
+        txtB.Text = Rules.SetToString(world.Rules.B);
+        txtP.Text = Rules.SetToString(world.Rules.P);
+        txtZ.Text = Rules.SetToString(world.Rules.Z);
+        txtM.Text = world.Rules.M.ToString();
+        txtL.Text = world.Rules.L.ToString();
+    }
+
+    private void btnApply_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var r = new Rules();
+            r.R = Rules.ParseSet(txtR.Text);
+            r.W = Rules.ParseSet(txtW.Text);
+            r.B = Rules.ParseSet(txtB.Text);
+            r.P = Rules.ParseSet(txtP.Text);
+            r.Z = Rules.ParseSet(txtZ.Text);
+            r.M = int.Parse(txtM.Text);
+            r.L = int.Parse(txtL.Text);
+            world.Rules = r;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Wrong rules: " + ex.Message);
+        }
+    }
+
+    private void btnSave_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new SaveFileDialog();
+        dlg.Filter = "Text files (*.txt)|*.txt";
+        dlg.FileName = "board.txt";
+        if (dlg.ShowDialog() == true)
+        {
+            SaveLoad.Save(world, dlg.FileName);
+        }
+    }
+
+    private void btnLoad_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog();
+        dlg.Filter = "Text files (*.txt)|*.txt|All files|*.*";
+        if (dlg.ShowDialog() == true)
+        {
+            try
+            {
+                world = SaveLoad.Load(dlg.FileName);
+                generation = 0;
+                txtWidth.Text = world.Width.ToString();
+                txtHeight.Text = world.Height.ToString();
+                CreateBoard();
+                ShowRules();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not load file: " + ex.Message);
+            }
+        }
     }
 }
