@@ -14,6 +14,10 @@
 
         <ScrollViewer x:Name="boardScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="board" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5">
+                <!-- zoom: only part of the board is visible but the whole board keeps working -->
+                <ItemsControl.LayoutTransform>
+                    <ScaleTransform x:Name="zoomTransform" ScaleX="1" ScaleY="1"/>
+                </ItemsControl.LayoutTransform>
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <UniformGrid x:Name="boardGrid" Columns="{Binding BoardWidth, RelativeSource={RelativeSource AncestorType=Window}}"/>
@@ -39,7 +43,8 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <StackPanel Grid.Column="1" Margin="5">
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="5">
             <TextBlock Text="Board size" FontWeight="Bold"/>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="W:" VerticalAlignment="Center"/>
@@ -50,6 +55,26 @@
             <Button x:Name="btnNew" Content="New board" Click="btnNew_Click" Margin="2"/>
             <Button x:Name="btnClear" Content="Clear" Click="btnClear_Click" Margin="2"/>
             <Button x:Name="btnRandom" Content="Random" Click="btnRandom_Click" Margin="2"/>
+            <ToggleButton x:Name="btnZoom" Content="Zoom x3" Margin="2,10,2,2">
+                <ToggleButton.Triggers>
+                    <EventTrigger RoutedEvent="ToggleButton.Checked">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="zoomTransform" Storyboard.TargetProperty="ScaleX" To="3" Duration="0:0:0.4"/>
+                                <DoubleAnimation Storyboard.TargetName="zoomTransform" Storyboard.TargetProperty="ScaleY" To="3" Duration="0:0:0.4"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="ToggleButton.Unchecked">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="zoomTransform" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.4"/>
+                                <DoubleAnimation Storyboard.TargetName="zoomTransform" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.4"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </ToggleButton.Triggers>
+            </ToggleButton>
             <Button x:Name="btnStep" Content="Step" Click="btnStep_Click" Margin="2,10,2,2"/>
             <Button x:Name="btnStart" Content="Start" Click="btnStart_Click" Margin="2"/>
             <TextBlock Text="Speed" Margin="2,5,2,0"/>
@@ -92,5 +117,6 @@
             <TextBlock x:Name="txtDeaths" Text="Deaths: 0" Margin="2,0" TextWrapping="Wrap"/>
             <TextBlock Text="Click on a cell to change it (empty -> plant -> animal -> both)" TextWrapping="Wrap" Margin="2,10,2,2" Foreground="Gray"/>
         </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>
