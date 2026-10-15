@@ -99,32 +99,4 @@
         <Setter Property="Margin" Value="2,10,2,2"/>
     </Style>
 
-    <!-- one cell of the board -->
-    <DataTemplate x:Key="CellTemplate">
-        <Border x:Name="cellBorder" Width="{StaticResource CellSize}" Height="{StaticResource CellSize}"
-                Background="{StaticResource EmptyBrush}" BorderBrush="{StaticResource GridLineBrush}" BorderThickness="0.5">
-            <Ellipse x:Name="animalDot" Margin="1.5" Fill="{StaticResource AnimalBrush}" Visibility="Collapsed"/>
-        </Border>
-        <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding State}" Value="Plant">
-                <Setter TargetName="cellBorder" Property="Background" Value="{StaticResource PlantBrush}"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding State}" Value="Animal">
-                <Setter TargetName="animalDot" Property="Visibility" Value="Visible"/>
-                <!-- new animal on this cell fades in -->
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetName="animalDot" Storyboard.TargetProperty="Opacity" From="0.2" To="1" Duration="0:0:0.3"/>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </DataTrigger.EnterActions>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding State}" Value="Both">
-                <Setter TargetName="cellBorder" Property="Background" Value="{StaticResource PlantBrush}"/>
-                <Setter TargetName="animalDot" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="animalDot" Property="Fill" Value="{StaticResource BothBrush}"/>
-            </DataTrigger>
-        </DataTemplate.Triggers>
-    </DataTemplate>
 </ResourceDictionary>

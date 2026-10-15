@@ -13,18 +13,13 @@
         </Grid.ColumnDefinitions>
 
         <ScrollViewer x:Name="boardScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="{StaticResource BoardBackgroundBrush}">
-            <ItemsControl x:Name="board" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5"
-                          ItemTemplate="{StaticResource CellTemplate}" MouseLeftButtonDown="Board_MouseLeftButtonDown">
+            <local:BoardView x:Name="board" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5"
+                             MouseLeftButtonDown="Board_MouseLeftButtonDown">
                 <!-- zoom: only part of the board is visible but the whole board keeps working -->
-                <ItemsControl.LayoutTransform>
+                <local:BoardView.LayoutTransform>
                     <ScaleTransform x:Name="zoomTransform" ScaleX="1" ScaleY="1"/>
-                </ItemsControl.LayoutTransform>
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <UniformGrid x:Name="boardGrid" Columns="{Binding BoardWidth, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+                </local:BoardView.LayoutTransform>
+            </local:BoardView>
         </ScrollViewer>
 
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="{StaticResource PanelBrush}">

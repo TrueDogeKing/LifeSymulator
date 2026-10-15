@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,58 +7,31 @@ using LifeSymulator.Model;
 
 namespace LifeSymulator;
 
-public partial class MainWindow : Window, INotifyPropertyChanged
+public partial class MainWindow : Window
 {
     World world;
-    ObservableCollection<CellView> cells = new ObservableCollection<CellView>();
-
-    private int boardWidth;
-    public int BoardWidth
-    {
-        get { return boardWidth; }
-        set { boardWidth = value; OnPropertyChanged(nameof(BoardWidth)); }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    void OnPropertyChanged(string name)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
 
     public MainWindow()
     {
         InitializeComponent();
         world = new World(50, 50);
+        board.LoadColorsFromResources();
         CreateBoard();
         ShowRules();
         timer.Interval = TimeSpan.FromMilliseconds(200);
         timer.Tick += Timer_Tick;
     }
 
-    // builds the CellView list from the world (only when size changes)
+    // called when the world object changes (new size / loaded from file)
     void CreateBoard()
     {
-        BoardWidth = world.Width;
-        cells = new ObservableCollection<CellView>();
-        // UniformGrid fills row by row so y is outer loop
-        for (int y = 0; y < world.Height; y++)
-            for (int x = 0; x < world.Width; x++)
-                cells.Add(new CellView { X = x, Y = y });
-        board.ItemsSource = cells;
+        board.World = world;
         RefreshBoard();
     }
 
-    // copies state from model to views
     void RefreshBoard()
     {
-        foreach (var cv in cells)
-        {
-            Cell c = world.Cells[cv.X, cv.Y];
-            if (c.HasPlant && c.HasAnimal) cv.State = CellState.Both;
-            else if (c.HasAnimal) cv.State = CellState.Animal;
-            else if (c.HasPlant) cv.State = CellState.Plant;
-            else cv.State = CellState.Empty;
-        }
+        board.Redraw();
         UpdateStats();
     }
 
@@ -78,24 +49,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void Board_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (running) return;
-        var fe = e.OriginalSource as FrameworkElement;
-        if (fe == null || !(fe.DataContext is CellView cv)) return;
-        Cell c = world.Cells[cv.X, cv.Y];
+        if (!board.GetCell(e.GetPosition(board), out int x, out int y)) return;
+        Cell c = world.Cells[x, y];
         // cycle empty -> plant -> animal -> both -> empty
-        switch (cv.State)
+        if (!c.HasPlant && !c.HasAnimal)
         {
-            case CellState.Empty:
-                c.HasPlant = true; c.HasAnimal = false;
-                break;
-            case CellState.Plant:
-                c.HasPlant = false; c.HasAnimal = true; c.AnimalAge = 0;
-                break;
-            case CellState.Animal:
-                c.HasPlant = true; c.HasAnimal = true;
-                break;
-            case CellState.Both:
-                c.HasPlant = false; c.HasAnimal = false;
-                break;
+            c.HasPlant = true;
+        }
+        else if (c.HasPlant && !c.HasAnimal)
+        {
+            c.HasPlant = false; c.HasAnimal = true; c.AnimalAge = 0;
+        }
+        else if (!c.HasPlant && c.HasAnimal)
+        {
+            c.HasPlant = true;
+        }
+        else
+        {
+            c.HasPlant = false; c.HasAnimal = false;
         }
         RefreshBoard();
     }
@@ -108,9 +79,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             MessageBox.Show("Size must be a number");
             return;
         }
-        if (w < 50 || h < 50 || w > 300 || h > 300)
+        if (w < 50 || h < 50 || w > 1000 || h > 1000)
         {
-            MessageBox.Show("Size must be between 50 and 300");
+            MessageBox.Show("Size must be between 50 and 1000");
             return;
         }
         var rules = world.Rules;
