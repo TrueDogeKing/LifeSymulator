@@ -1,4 +1,4 @@
-﻿<Window x:Class="LifeSymulator.MainWindow"
+<Window x:Class="LifeSymulator.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,6 +7,50 @@
         mc:Ignorable="d"
         Title="Life Simulator" Height="700" Width="1000">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="220"/>
+        </Grid.ColumnDefinitions>
 
+        <ScrollViewer x:Name="boardScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="board" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="5">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid x:Name="boardGrid" Columns="{Binding BoardWidth, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="cellBorder" Width="10" Height="10" Background="White" BorderBrush="LightGray" BorderThickness="0.5"
+                                MouseLeftButtonDown="Cell_MouseLeftButtonDown"/>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding State}" Value="Plant">
+                                <Setter TargetName="cellBorder" Property="Background" Value="Green"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Animal">
+                                <Setter TargetName="cellBorder" Property="Background" Value="Red"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Both">
+                                <Setter TargetName="cellBorder" Property="Background" Value="Orange"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <StackPanel Grid.Column="1" Margin="5">
+            <TextBlock Text="Board size" FontWeight="Bold"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="W:" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtWidth" Width="50" Text="50" Margin="3"/>
+                <TextBlock Text="H:" VerticalAlignment="Center"/>
+                <TextBox x:Name="txtHeight" Width="50" Text="50" Margin="3"/>
+            </StackPanel>
+            <Button x:Name="btnNew" Content="New board" Click="btnNew_Click" Margin="2"/>
+            <Button x:Name="btnClear" Content="Clear" Click="btnClear_Click" Margin="2"/>
+            <Button x:Name="btnRandom" Content="Random" Click="btnRandom_Click" Margin="2"/>
+            <TextBlock Text="Click on a cell to change it (empty -> plant -> animal -> both)" TextWrapping="Wrap" Margin="2,10,2,2" Foreground="Gray"/>
+        </StackPanel>
     </Grid>
 </Window>
