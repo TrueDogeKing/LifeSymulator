@@ -59,6 +59,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             else if (c.HasPlant) cv.State = CellState.Plant;
             else cv.State = CellState.Empty;
         }
+        UpdateStats();
+    }
+
+    void UpdateStats()
+    {
+        txtGeneration.Text = "Generation: " + generation;
+        txtPlants.Text = "Plants: " + world.PlantCount();
+        txtAnimals.Text = "Animals: " + world.AnimalCount();
+        // last step (total)
+        txtBirths.Text = $"Births: plants {world.PlantBirths} ({world.TotalPlantBirths}), animals {world.AnimalBirths} ({world.TotalAnimalBirths})";
+        txtDeaths.Text = $"Deaths: plants {world.PlantDeaths} ({world.TotalPlantDeaths}), animals {world.AnimalDeaths} ({world.TotalAnimalDeaths})";
     }
 
     private void Cell_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -92,18 +103,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var rules = world.Rules;
         world = new World(w, h);
         world.Rules = rules;
+        generation = 0;
         CreateBoard();
     }
 
     private void btnClear_Click(object sender, RoutedEventArgs e)
     {
         world.Clear();
+        world.ResetStats();
+        generation = 0;
         RefreshBoard();
     }
 
     private void btnRandom_Click(object sender, RoutedEventArgs e)
     {
         world.Randomize();
+        world.ResetStats();
         generation = 0;
         RefreshBoard();
     }
@@ -154,7 +169,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         world.Step();
         generation++;
-        txtGeneration.Text = "Generation: " + generation;
         RefreshBoard();
     }
 }

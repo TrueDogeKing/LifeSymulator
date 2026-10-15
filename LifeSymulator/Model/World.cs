@@ -9,6 +9,30 @@ namespace LifeSymulator.Model
 
         Random rnd = new Random();
 
+        // statistics (last step + total)
+        public int PlantBirths, PlantDeaths, AnimalBirths, AnimalDeaths;
+        public int TotalPlantBirths, TotalPlantDeaths, TotalAnimalBirths, TotalAnimalDeaths;
+
+        public int PlantCount()
+        {
+            int n = 0;
+            foreach (var c in Cells) if (c.HasPlant) n++;
+            return n;
+        }
+
+        public int AnimalCount()
+        {
+            int n = 0;
+            foreach (var c in Cells) if (c.HasAnimal) n++;
+            return n;
+        }
+
+        public void ResetStats()
+        {
+            PlantBirths = PlantDeaths = AnimalBirths = AnimalDeaths = 0;
+            TotalPlantBirths = TotalPlantDeaths = TotalAnimalBirths = TotalAnimalDeaths = 0;
+        }
+
         public World(int width, int height)
         {
             Width = width;
@@ -74,6 +98,8 @@ namespace LifeSymulator.Model
                 for (int y = 0; y < Height; y++)
                     next[x, y] = old[x, y].Copy();
 
+            PlantBirths = PlantDeaths = AnimalBirths = AnimalDeaths = 0;
+
             // 1. plants and animals birth/death (computed from old state)
             for (int x = 0; x < Width; x++)
             {
@@ -87,12 +113,18 @@ namespace LifeSymulator.Model
                     if (!o.HasPlant && !o.HasAnimal)
                     {
                         if (Rules.R.Contains(p))
+                        {
                             n.HasPlant = true;
+                            PlantBirths++;
+                        }
                     }
                     else if (o.HasPlant)
                     {
                         if (!Rules.W.Contains(p))
+                        {
                             n.HasPlant = false;
+                            PlantDeaths++;
+                        }
                     }
 
                     if (o.HasAnimal)
@@ -102,6 +134,7 @@ namespace LifeSymulator.Model
                         {
                             n.HasAnimal = false;
                             n.AnimalAge = 0;
+                            AnimalDeaths++;
                         }
                     }
                     else
@@ -110,6 +143,7 @@ namespace LifeSymulator.Model
                         {
                             n.HasAnimal = true;
                             n.AnimalAge = 0;
+                            AnimalBirths++;
                         }
                     }
                 }
@@ -133,7 +167,15 @@ namespace LifeSymulator.Model
             for (int x = 0; x < Width; x++)
                 for (int y = 0; y < Height; y++)
                     if (next[x, y].HasAnimal && next[x, y].HasPlant)
+                    {
                         next[x, y].HasPlant = false;
+                        PlantDeaths++; // eaten
+                    }
+
+            TotalPlantBirths += PlantBirths;
+            TotalPlantDeaths += PlantDeaths;
+            TotalAnimalBirths += AnimalBirths;
+            TotalAnimalDeaths += AnimalDeaths;
 
             Cells = next;
         }

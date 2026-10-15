@@ -55,6 +55,11 @@
             <TextBlock Text="Speed" Margin="2,5,2,0"/>
             <Slider x:Name="sliderSpeed" Minimum="1" Maximum="30" Value="5" ValueChanged="sliderSpeed_ValueChanged" Margin="2"/>
             <TextBlock x:Name="txtGeneration" Text="Generation: 0" Margin="2"/>
+            <TextBlock Text="Statistics" FontWeight="Bold" Margin="2,10,2,2"/>
+            <TextBlock x:Name="txtPlants" Text="Plants: 0" Margin="2,0"/>
+            <TextBlock x:Name="txtAnimals" Text="Animals: 0" Margin="2,0"/>
+            <TextBlock x:Name="txtBirths" Text="Births: 0" Margin="2,0" TextWrapping="Wrap"/>
+            <TextBlock x:Name="txtDeaths" Text="Deaths: 0" Margin="2,0" TextWrapping="Wrap"/>
             <TextBlock Text="Click on a cell to change it (empty -> plant -> animal -> both)" TextWrapping="Wrap" Margin="2,10,2,2" Foreground="Gray"/>
         </StackPanel>
     </Grid>
