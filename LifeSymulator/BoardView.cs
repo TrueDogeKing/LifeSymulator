@@ -40,6 +40,12 @@ namespace LifeSymulator
         public Color AnimalColor = Colors.Red;
         public Color BothColor = Colors.Orange;
 
+        // pictures instead of colors (used only when zoomed in, small cells use colors anyway)
+        public bool UseImages = false;
+        public ImageSource? PlantImage;
+        public ImageSource? AnimalImage;
+        public const double ImageMinCellSize = 8;
+
         // bitmap only as big as the visible part of the board
         WriteableBitmap? bmp;
         int[] pixels = new int[0];
@@ -71,6 +77,8 @@ namespace LifeSymulator
             PlantColor = GetColor("PlantBrush", PlantColor);
             AnimalColor = GetColor("AnimalBrush", AnimalColor);
             BothColor = GetColor("BothBrush", BothColor);
+            PlantImage = TryFindResource("PlantImage") as ImageSource;
+            AnimalImage = TryFindResource("AnimalImage") as ImageSource;
         }
 
         Color GetColor(string key, Color def)
@@ -141,7 +149,13 @@ namespace LifeSymulator
                 pixels = new int[w * h];
             }
 
+            bool images = UseImages && cs >= ImageMinCellSize && PlantImage != null && AnimalImage != null;
             int empty = ToInt(EmptyColor), plant = ToInt(PlantColor), animal = ToInt(AnimalColor), both = ToInt(BothColor);
+            if (images)
+            {
+                // background only, pictures are drawn on top
+                plant = animal = both = empty;
+            }
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
@@ -160,6 +174,21 @@ namespace LifeSymulator
             double sx = o.X + (x0 - OffsetX) * cs;
             double sy = o.Y + (y0 - OffsetY) * cs;
             dc.DrawImage(bmp, new Rect(sx, sy, w * cs, h * cs));
+
+            if (images)
+            {
+                // only visible cells, so this is ok even for huge boards
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        Cell c = World.Cells[x0 + x, y0 + y];
+                        Rect r = new Rect(sx + x * cs, sy + y * cs, cs, cs);
+                        if (c.HasPlant) dc.DrawImage(PlantImage, r);
+                        if (c.HasAnimal) dc.DrawImage(AnimalImage, r);
+                    }
+                }
+            }
 
             // grid lines only when zoomed in enough
             if (cs >= 6)

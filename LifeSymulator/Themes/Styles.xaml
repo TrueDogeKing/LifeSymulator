@@ -99,4 +99,20 @@
         <Setter Property="Margin" Value="2,10,2,2"/>
     </Style>
 
+    <!-- item in the color combobox: small square + name -->
+    <DataTemplate x:Key="ColorItemTemplate">
+        <StackPanel Orientation="Horizontal">
+            <Rectangle Width="14" Height="14" Fill="{Binding Brush}" Stroke="Black" StrokeThickness="0.5" Margin="0,0,5,0"/>
+            <TextBlock Text="{Binding Name}"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- image buttons work only in "Images" mode (DataTrigger on the look combobox) -->
+    <Style x:Key="ImageButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding SelectedIndex, ElementName=cmbLook}" Value="0">
+                <Setter Property="IsEnabled" Value="False"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
 </ResourceDictionary>

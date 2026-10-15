@@ -53,6 +53,34 @@
             <Slider x:Name="sliderZoom" Minimum="0.5" Maximum="40" Margin="2"
                     Value="{Binding CellSize, ElementName=board, Mode=TwoWay}" PreviewMouseDown="sliderZoom_PreviewMouseDown"/>
             <TextBlock Text="Mouse wheel = zoom, right drag = move" Foreground="Gray" TextWrapping="Wrap" Margin="2,0"/>
+            <TextBlock Text="Look" Style="{StaticResource HeaderText}"/>
+            <ComboBox x:Name="cmbLook" SelectedIndex="0" SelectionChanged="cmbLook_SelectionChanged" Margin="2">
+                <ComboBoxItem Content="Colors"/>
+                <ComboBoxItem Content="Images (when zoomed in)"/>
+            </ComboBox>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="55"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition/><RowDefinition/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Plant" VerticalAlignment="Center" Margin="2"/>
+                <ComboBox x:Name="cmbPlantColor" Grid.Column="1" Margin="2" ItemTemplate="{StaticResource ColorItemTemplate}"
+                          SelectionChanged="cmbColor_SelectionChanged"/>
+                <Image x:Name="imgPlant" Grid.Column="2" Width="20" Height="20" Margin="2"/>
+                <TextBlock Grid.Row="1" Text="Animal" VerticalAlignment="Center" Margin="2"/>
+                <ComboBox x:Name="cmbAnimalColor" Grid.Row="1" Grid.Column="1" Margin="2" ItemTemplate="{StaticResource ColorItemTemplate}"
+                          SelectionChanged="cmbColor_SelectionChanged"/>
+                <Image x:Name="imgAnimal" Grid.Row="1" Grid.Column="2" Width="20" Height="20" Margin="2"/>
+            </Grid>
+            <UniformGrid Columns="3">
+                <Button x:Name="btnPlantImage" Content="Plant..." Click="btnPlantImage_Click" Margin="2" Style="{StaticResource ImageButtonStyle}"/>
+                <Button x:Name="btnAnimalImage" Content="Animal..." Click="btnAnimalImage_Click" Margin="2" Style="{StaticResource ImageButtonStyle}"/>
+                <Button x:Name="btnDefaultImages" Content="Default" Click="btnDefaultImages_Click" Margin="2" Style="{StaticResource ImageButtonStyle}"/>
+            </UniformGrid>
             <TextBlock Text="Simulation" Style="{StaticResource HeaderText}"/>
             <Button x:Name="btnStep" Content="Step" Click="btnStep_Click" Margin="2"/>
             <Button x:Name="btnStart" Content="Start" Click="btnStart_Click" Margin="2" Style="{StaticResource StartButtonStyle}"/>

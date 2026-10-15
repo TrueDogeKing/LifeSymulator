@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -17,6 +19,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         world = new World(50, 50);
         board.LoadColorsFromResources();
+        FillColorLists();
         board.ViewChanged += (s, e) => UpdateScrollBars();
         CreateBoard();
         Loaded += (s, e) => FitBoard(false);
@@ -150,6 +153,118 @@ public partial class MainWindow : Window
         dragging = false;
         board.ReleaseMouseCapture();
         board.Cursor = null;
+    }
+
+    // ---------- look of plants / animals ----------
+
+    public class ColorItem
+    {
+        public string Name { get; set; } = "";
+        public Color Color { get; set; }
+        public SolidColorBrush Brush { get; set; } = Brushes.Transparent;
+    }
+
+    List<ColorItem> MakeColorList(Color def)
+    {
+        var list = new List<ColorItem>();
+        list.Add(new ColorItem { Name = "Default", Color = def, Brush = new SolidColorBrush(def) });
+        // all named colors from System.Windows.Media.Colors
+        foreach (var prop in typeof(Colors).GetProperties())
+        {
+            var c = (Color)prop.GetValue(null)!;
+            if (c.A == 0) continue; // Transparent
+            list.Add(new ColorItem { Name = prop.Name, Color = c, Brush = new SolidColorBrush(c) });
+        }
+        return list;
+    }
+
+    Color defaultBothColor;
+
+    void FillColorLists()
+    {
+        defaultBothColor = board.BothColor;
+        cmbPlantColor.ItemsSource = MakeColorList(board.PlantColor);
+        cmbPlantColor.SelectedIndex = 0;
+        cmbAnimalColor.ItemsSource = MakeColorList(board.AnimalColor);
+        cmbAnimalColor.SelectedIndex = 0;
+        imgPlant.Source = board.PlantImage;
+        imgAnimal.Source = board.AnimalImage;
+    }
+
+    private void cmbColor_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (cmbPlantColor.SelectedItem is ColorItem p) board.PlantColor = p.Color;
+        if (cmbAnimalColor.SelectedItem is ColorItem a) board.AnimalColor = a.Color;
+        // animal on a plant = mix of both colors (or the one from Colors.xaml if nothing was changed)
+        Color pc = board.PlantColor, ac = board.AnimalColor;
+        if (cmbPlantColor.SelectedIndex <= 0 && cmbAnimalColor.SelectedIndex <= 0)
+            board.BothColor = defaultBothColor;
+        else
+            board.BothColor = Color.FromRgb((byte)((pc.R + ac.R) / 2), (byte)((pc.G + ac.G) / 2), (byte)((pc.B + ac.B) / 2));
+        board.Redraw();
+    }
+
+    private void cmbLook_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (board == null) return; // called during InitializeComponent
+        board.UseImages = cmbLook.SelectedIndex == 1;
+        if (board.UseImages && board.CellSize < BoardView.ImageMinCellSize)
+        {
+            // zoom in a bit, otherwise images are not visible
+            board.ZoomAnchor = ViewCenter();
+            ZoomTo(16, true);
+        }
+        board.Redraw();
+    }
+
+    ImageSource? PickImage()
+    {
+        var dlg = new OpenFileDialog();
+        dlg.Filter = "Images (*.png;*.jpg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif";
+        if (dlg.ShowDialog() != true) return null;
+        try
+        {
+            var img = new BitmapImage();
+            img.BeginInit();
+            img.UriSource = new Uri(dlg.FileName);
+            img.CacheOption = BitmapCacheOption.OnLoad;
+            img.DecodePixelWidth = 64; // no need for big pictures
+            img.EndInit();
+            img.Freeze();
+            return img;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Could not load image: " + ex.Message);
+            return null;
+        }
+    }
+
+    private void btnPlantImage_Click(object sender, RoutedEventArgs e)
+    {
+        var img = PickImage();
+        if (img == null) return;
+        board.PlantImage = img;
+        imgPlant.Source = img;
+        board.Redraw();
+    }
+
+    private void btnAnimalImage_Click(object sender, RoutedEventArgs e)
+    {
+        var img = PickImage();
+        if (img == null) return;
+        board.AnimalImage = img;
+        imgAnimal.Source = img;
+        board.Redraw();
+    }
+
+    private void btnDefaultImages_Click(object sender, RoutedEventArgs e)
+    {
+        board.PlantImage = TryFindResource("PlantImage") as ImageSource;
+        board.AnimalImage = TryFindResource("AnimalImage") as ImageSource;
+        imgPlant.Source = board.PlantImage;
+        imgAnimal.Source = board.AnimalImage;
+        board.Redraw();
     }
 
     void RefreshBoard()
