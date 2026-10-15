@@ -50,6 +50,8 @@
             <Button x:Name="btnNew" Content="New board" Click="btnNew_Click" Margin="2"/>
             <Button x:Name="btnClear" Content="Clear" Click="btnClear_Click" Margin="2"/>
             <Button x:Name="btnRandom" Content="Random" Click="btnRandom_Click" Margin="2"/>
+            <Button x:Name="btnStep" Content="Step" Click="btnStep_Click" Margin="2,10,2,2"/>
+            <TextBlock x:Name="txtGeneration" Text="Generation: 0" Margin="2"/>
             <TextBlock Text="Click on a cell to change it (empty -> plant -> animal -> both)" TextWrapping="Wrap" Margin="2,10,2,2" Foreground="Gray"/>
         </StackPanel>
     </Grid>

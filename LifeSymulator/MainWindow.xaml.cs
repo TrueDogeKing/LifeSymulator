@@ -100,6 +100,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void btnRandom_Click(object sender, RoutedEventArgs e)
     {
         world.Randomize();
+        generation = 0;
+        RefreshBoard();
+    }
+
+    int generation = 0;
+
+    private void btnStep_Click(object sender, RoutedEventArgs e)
+    {
+        DoStep();
+    }
+
+    void DoStep()
+    {
+        world.Step();
+        generation++;
+        txtGeneration.Text = "Generation: " + generation;
         RefreshBoard();
     }
 }
