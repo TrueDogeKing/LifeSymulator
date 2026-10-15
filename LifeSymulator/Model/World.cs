@@ -8,6 +8,7 @@ namespace LifeSymulator.Model
         public Rules Rules = new Rules();
 
         Random rnd = new Random();
+        Cell[,]? spare; // buffer for the next generation
 
         // statistics (last step + total)
         public int PlantBirths, PlantDeaths, AnimalBirths, AnimalDeaths;
@@ -68,21 +69,13 @@ namespace LifeSymulator.Model
             }
         }
 
-        // counts neighbours (8 around), board wraps around the edges
-        int CountNeighbours(Cell[,] grid, int x, int y, bool plants)
+        // HashSet.Contains was slow in the main loop, so the rules are turned into bool tables (0..8 neighbours)
+        static bool[] ToTable(HashSet<int> set)
         {
-            int count = 0;
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    if (dx == 0 && dy == 0) continue;
-                    Cell c = grid[Wrap(x + dx, Width), Wrap(y + dy, Height)];
-                    if (plants && c.HasPlant) count++;
-                    if (!plants && c.HasAnimal) count++;
-                }
-            }
-            return count;
+            var t = new bool[9];
+            foreach (int v in set)
+                if (v >= 0 && v <= 8) t[v] = true;
+            return t;
         }
 
         int Wrap(int v, int max)
@@ -93,26 +86,57 @@ namespace LifeSymulator.Model
         public void Step()
         {
             Cell[,] old = Cells;
-            Cell[,] next = new Cell[Width, Height];
+            // second buffer is reused, creating 1M new objects every step was too slow
+            if (spare == null || spare.GetLength(0) != Width || spare.GetLength(1) != Height || spare == old)
+            {
+                spare = new Cell[Width, Height];
+                for (int x = 0; x < Width; x++)
+                    for (int y = 0; y < Height; y++)
+                        spare[x, y] = new Cell();
+            }
+            Cell[,] next = spare;
             for (int x = 0; x < Width; x++)
+            {
                 for (int y = 0; y < Height; y++)
-                    next[x, y] = old[x, y].Copy();
+                {
+                    Cell o = old[x, y], n = next[x, y];
+                    n.HasPlant = o.HasPlant;
+                    n.HasAnimal = o.HasAnimal;
+                    n.AnimalAge = o.AnimalAge;
+                }
+            }
+
+            bool[] r = ToTable(Rules.R), wt = ToTable(Rules.W), b = ToTable(Rules.B), pt = ToTable(Rules.P), z = ToTable(Rules.Z);
 
             PlantBirths = PlantDeaths = AnimalBirths = AnimalDeaths = 0;
 
             // 1. plants and animals birth/death (computed from old state)
             for (int x = 0; x < Width; x++)
             {
+                int xl = x == 0 ? Width - 1 : x - 1;
+                int xr = x == Width - 1 ? 0 : x + 1;
                 for (int y = 0; y < Height; y++)
                 {
                     Cell o = old[x, y];
                     Cell n = next[x, y];
-                    int p = CountNeighbours(old, x, y, true);
-                    int a = CountNeighbours(old, x, y, false);
+                    int yu = y == 0 ? Height - 1 : y - 1;
+                    int yd = y == Height - 1 ? 0 : y + 1;
+
+                    // count plant and animal neighbours (8 around, board wraps around the edges)
+                    int p = 0, a = 0;
+                    Cell c;
+                    c = old[xl, yu]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[x, yu]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[xr, yu]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[xl, y]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[xr, y]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[xl, yd]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[x, yd]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
+                    c = old[xr, yd]; if (c.HasPlant) p++; if (c.HasAnimal) a++;
 
                     if (!o.HasPlant && !o.HasAnimal)
                     {
-                        if (Rules.R.Contains(p))
+                        if (r[p])
                         {
                             n.HasPlant = true;
                             PlantBirths++;
@@ -120,7 +144,7 @@ namespace LifeSymulator.Model
                     }
                     else if (o.HasPlant)
                     {
-                        if (!Rules.W.Contains(p))
+                        if (!wt[p])
                         {
                             n.HasPlant = false;
                             PlantDeaths++;
@@ -130,7 +154,7 @@ namespace LifeSymulator.Model
                     if (o.HasAnimal)
                     {
                         n.AnimalAge++;
-                        if (n.AnimalAge > Rules.L || !Rules.Z.Contains(a))
+                        if (n.AnimalAge > Rules.L || !z[a])
                         {
                             n.HasAnimal = false;
                             n.AnimalAge = 0;
@@ -139,7 +163,7 @@ namespace LifeSymulator.Model
                     }
                     else
                     {
-                        if (Rules.B.Contains(a) && Rules.P.Contains(p))
+                        if (b[a] && pt[p])
                         {
                             n.HasAnimal = true;
                             n.AnimalAge = 0;
@@ -155,7 +179,11 @@ namespace LifeSymulator.Model
                 for (int y = 0; y < Height; y++)
                     if (next[x, y].HasAnimal)
                         animals.Add((x, y));
-            animals = animals.OrderBy(t => rnd.Next()).ToList();
+            for (int i = animals.Count - 1; i > 0; i--)
+            {
+                int j = rnd.Next(i + 1);
+                (animals[i], animals[j]) = (animals[j], animals[i]);
+            }
 
             foreach (var (x, y) in animals)
             {
@@ -177,6 +205,7 @@ namespace LifeSymulator.Model
             TotalAnimalBirths += AnimalBirths;
             TotalAnimalDeaths += AnimalDeaths;
 
+            spare = old;
             Cells = next;
         }
 
