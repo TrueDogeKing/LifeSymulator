@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using LifeSymulator.Model;
 
 namespace LifeSymulator;
@@ -30,6 +31,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         world = new World(50, 50);
         CreateBoard();
+        timer.Interval = TimeSpan.FromMilliseconds(200);
+        timer.Tick += Timer_Tick;
     }
 
     // builds the CellView list from the world (only when size changes)
@@ -60,6 +63,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void Cell_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (running) return;
         var cv = (CellView)((FrameworkElement)sender).DataContext;
         Cell c = world.Cells[cv.X, cv.Y];
         // cycle empty -> plant -> animal -> both -> empty
@@ -109,6 +113,41 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void btnStep_Click(object sender, RoutedEventArgs e)
     {
         DoStep();
+    }
+
+    DispatcherTimer timer = new DispatcherTimer();
+    bool running = false;
+
+    private void btnStart_Click(object sender, RoutedEventArgs e)
+    {
+        if (!running)
+        {
+            running = true;
+            btnStart.Content = "Stop";
+            timer.Start();
+        }
+        else
+        {
+            running = false;
+            btnStart.Content = "Start";
+            timer.Stop();
+        }
+        // no editing while animation is running
+        btnNew.IsEnabled = !running;
+        btnClear.IsEnabled = !running;
+        btnRandom.IsEnabled = !running;
+        btnStep.IsEnabled = !running;
+    }
+
+    private void Timer_Tick(object? sender, EventArgs e)
+    {
+        DoStep();
+    }
+
+    private void sliderSpeed_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        // value = steps per second
+        timer.Interval = TimeSpan.FromMilliseconds(1000.0 / e.NewValue);
     }
 
     void DoStep()
