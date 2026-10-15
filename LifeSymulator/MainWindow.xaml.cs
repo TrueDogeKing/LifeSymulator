@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using LifeSymulator.Model;
@@ -16,7 +17,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         world = new World(50, 50);
         board.LoadColorsFromResources();
+        board.ViewChanged += (s, e) => UpdateScrollBars();
         CreateBoard();
+        Loaded += (s, e) => FitBoard(false);
         ShowRules();
         timer.Interval = TimeSpan.FromMilliseconds(200);
         timer.Tick += Timer_Tick;
@@ -26,7 +29,127 @@ public partial class MainWindow : Window
     void CreateBoard()
     {
         board.World = world;
+        board.ScrollTo(0, 0);
         RefreshBoard();
+    }
+
+    // ---------- zoom ----------
+
+    // zoom levels for the +/- buttons
+    double[] zoomLevels = { 0.5, 1, 2, 4, 8, 16, 32 };
+
+    Point ViewCenter()
+    {
+        return new Point(board.ActualWidth / 2, board.ActualHeight / 2);
+    }
+
+    void ZoomTo(double size, bool animate)
+    {
+        size = Math.Max(BoardView.MinCellSize, Math.Min(BoardView.MaxCellSize, size));
+        if (!animate)
+        {
+            // stop running animation first, otherwise it overrides the value
+            board.BeginAnimation(BoardView.CellSizeProperty, null);
+            board.CellSize = size;
+            return;
+        }
+        var anim = new DoubleAnimation(size, TimeSpan.FromMilliseconds(300));
+        anim.EasingFunction = new QuadraticEase();
+        anim.FillBehavior = FillBehavior.Stop;
+        // after animation the real value has to be set, otherwise it jumps back
+        anim.Completed += (s, e) => board.CellSize = size;
+        board.BeginAnimation(BoardView.CellSizeProperty, anim);
+    }
+
+    void FitBoard(bool animate)
+    {
+        if (board.ActualWidth <= 0) return;
+        double size = Math.Min(board.ActualWidth / world.Width, board.ActualHeight / world.Height);
+        board.ZoomAnchor = ViewCenter();
+        ZoomTo(Math.Min(size, 16), animate);
+    }
+
+    private void btnZoomIn_Click(object sender, RoutedEventArgs e)
+    {
+        board.ZoomAnchor = ViewCenter();
+        foreach (double z in zoomLevels)
+        {
+            if (z > board.CellSize + 0.01) { ZoomTo(z, true); return; }
+        }
+    }
+
+    private void btnZoomOut_Click(object sender, RoutedEventArgs e)
+    {
+        board.ZoomAnchor = ViewCenter();
+        for (int i = zoomLevels.Length - 1; i >= 0; i--)
+        {
+            if (zoomLevels[i] < board.CellSize - 0.01) { ZoomTo(zoomLevels[i], true); return; }
+        }
+    }
+
+    private void btnFit_Click(object sender, RoutedEventArgs e)
+    {
+        FitBoard(true);
+    }
+
+    private void sliderZoom_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        board.ZoomAnchor = ViewCenter();
+        board.BeginAnimation(BoardView.CellSizeProperty, null);
+    }
+
+    private void Board_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        board.ZoomAnchor = e.GetPosition(board);
+        double factor = Math.Pow(1.15, e.Delta / 120.0);
+        ZoomTo(board.CellSize * factor, false);
+    }
+
+    void UpdateScrollBars()
+    {
+        hScroll.Maximum = Math.Max(0, world.Width - board.VisibleCols);
+        hScroll.ViewportSize = board.VisibleCols;
+        hScroll.LargeChange = board.VisibleCols;
+        hScroll.Value = board.OffsetX;
+        vScroll.Maximum = Math.Max(0, world.Height - board.VisibleRows);
+        vScroll.ViewportSize = board.VisibleRows;
+        vScroll.LargeChange = board.VisibleRows;
+        vScroll.Value = board.OffsetY;
+    }
+
+    private void ScrollBar_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
+    {
+        board.ScrollTo(hScroll.Value, vScroll.Value);
+    }
+
+    // moving the board with right mouse button
+    bool dragging = false;
+    Point dragStart;
+    double dragStartX, dragStartY;
+
+    private void Board_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        dragging = true;
+        dragStart = e.GetPosition(board);
+        dragStartX = board.OffsetX;
+        dragStartY = board.OffsetY;
+        board.CaptureMouse();
+        board.Cursor = Cursors.SizeAll;
+    }
+
+    private void Board_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!dragging) return;
+        Point p = e.GetPosition(board);
+        board.ScrollTo(dragStartX - (p.X - dragStart.X) / board.CellSize,
+                       dragStartY - (p.Y - dragStart.Y) / board.CellSize);
+    }
+
+    private void Board_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        dragging = false;
+        board.ReleaseMouseCapture();
+        board.Cursor = null;
     }
 
     void RefreshBoard()
@@ -89,6 +212,7 @@ public partial class MainWindow : Window
         world.Rules = rules;
         generation = 0;
         CreateBoard();
+        FitBoard(true);
     }
 
     private void btnClear_Click(object sender, RoutedEventArgs e)
@@ -214,6 +338,7 @@ public partial class MainWindow : Window
                 txtHeight.Text = world.Height.ToString();
                 CreateBoard();
                 ShowRules();
+                FitBoard(true);
             }
             catch (Exception ex)
             {
