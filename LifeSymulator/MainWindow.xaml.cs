@@ -74,10 +74,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         txtDeaths.Text = $"Deaths: plants {world.PlantDeaths} ({world.TotalPlantDeaths}), animals {world.AnimalDeaths} ({world.TotalAnimalDeaths})";
     }
 
-    private void Cell_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    // clicked somewhere on the board, find which cell it was
+    private void Board_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (running) return;
-        var cv = (CellView)((FrameworkElement)sender).DataContext;
+        var fe = e.OriginalSource as FrameworkElement;
+        if (fe == null || !(fe.DataContext is CellView cv)) return;
         Cell c = world.Cells[cv.X, cv.Y];
         // cycle empty -> plant -> animal -> both -> empty
         switch (cv.State)
