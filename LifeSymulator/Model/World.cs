@@ -95,20 +95,13 @@ namespace LifeSymulator.Model
                         spare[x, y] = new Cell();
             }
             Cell[,] next = spare;
-            for (int x = 0; x < Width; x++)
-            {
-                for (int y = 0; y < Height; y++)
-                {
-                    Cell o = old[x, y], n = next[x, y];
-                    n.HasPlant = o.HasPlant;
-                    n.HasAnimal = o.HasAnimal;
-                    n.AnimalAge = o.AnimalAge;
-                }
-            }
 
             bool[] r = ToTable(Rules.R), wt = ToTable(Rules.W), b = ToTable(Rules.B), pt = ToTable(Rules.P), z = ToTable(Rules.Z);
 
             PlantBirths = PlantDeaths = AnimalBirths = AnimalDeaths = 0;
+
+            // living animals after phase 1 - filled in the same loop, so no extra pass over the board
+            var animals = new List<(int x, int y)>();
 
             // 1. plants and animals birth/death (computed from old state)
             for (int x = 0; x < Width; x++)
@@ -119,6 +112,10 @@ namespace LifeSymulator.Model
                 {
                     Cell o = old[x, y];
                     Cell n = next[x, y];
+                    // start from the old state, then apply the rules
+                    n.HasPlant = o.HasPlant;
+                    n.HasAnimal = o.HasAnimal;
+                    n.AnimalAge = o.AnimalAge;
                     int yu = y == 0 ? Height - 1 : y - 1;
                     int yd = y == Height - 1 ? 0 : y + 1;
 
@@ -170,35 +167,36 @@ namespace LifeSymulator.Model
                             AnimalBirths++;
                         }
                     }
+
+                    // survived or was just born
+                    if (n.HasAnimal)
+                        animals.Add((x, y));
                 }
             }
 
             // 2. movement - random order so animals in the top left corner dont always go first
-            var animals = new List<(int x, int y)>();
-            for (int x = 0; x < Width; x++)
-                for (int y = 0; y < Height; y++)
-                    if (next[x, y].HasAnimal)
-                        animals.Add((x, y));
             for (int i = animals.Count - 1; i > 0; i--)
             {
                 int j = rnd.Next(i + 1);
                 (animals[i], animals[j]) = (animals[j], animals[i]);
             }
 
-            foreach (var (x, y) in animals)
+            for (int i = 0; i < animals.Count; i++)
             {
+                var (x, y) = animals[i];
                 if (next[x, y].HasPlant) continue; // has food, stays
-                MoveAnimal(next, x, y);
+                animals[i] = MoveAnimal(next, x, y); // remember where it went
             }
 
-            // 3. animals eat plants on their field
-            for (int x = 0; x < Width; x++)
-                for (int y = 0; y < Height; y++)
-                    if (next[x, y].HasAnimal && next[x, y].HasPlant)
-                    {
-                        next[x, y].HasPlant = false;
-                        PlantDeaths++; // eaten
-                    }
+            // 3. animals eat plants on their field (only fields with animals need checking)
+            foreach (var (x, y) in animals)
+            {
+                if (next[x, y].HasPlant)
+                {
+                    next[x, y].HasPlant = false;
+                    PlantDeaths++; // eaten
+                }
+            }
 
             TotalPlantBirths += PlantBirths;
             TotalPlantDeaths += PlantDeaths;
@@ -210,7 +208,8 @@ namespace LifeSymulator.Model
         }
 
         // checks the new grid so two animals never end up on the same field
-        void MoveAnimal(Cell[,] next, int x, int y)
+        // returns new position of the animal (same as before if it could not move)
+        (int, int) MoveAnimal(Cell[,] next, int x, int y)
         {
             // a) plant right next to it
             var options = new List<(int, int)>();
@@ -228,7 +227,7 @@ namespace LifeSymulator.Model
             {
                 var t = options[rnd.Next(options.Count)];
                 Move(next, x, y, t.Item1, t.Item2);
-                return;
+                return t;
             }
 
             // b) look for the closest plant in range M and go M fields in that direction
@@ -263,7 +262,7 @@ namespace LifeSymulator.Model
                 if (cx != x || cy != y)
                 {
                     Move(next, x, y, cx, cy);
-                    return;
+                    return (cx, cy);
                 }
             }
 
@@ -283,7 +282,9 @@ namespace LifeSymulator.Model
             {
                 var t = options[rnd.Next(options.Count)];
                 Move(next, x, y, t.Item1, t.Item2);
+                return t;
             }
+            return (x, y); // surrounded, stays
         }
 
         void Move(Cell[,] grid, int x, int y, int nx, int ny)
