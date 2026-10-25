@@ -474,28 +474,65 @@ public partial class MainWindow : Window
         }
     }
 
+    // frames go to a temp folder, after stop they are turned into mp4
     private void btnRecord_Checked(object sender, RoutedEventArgs e)
     {
-        var dlg = new OpenFolderDialog();
-        dlg.Title = "Folder for frames";
-        if (dlg.ShowDialog() != true)
-        {
-            btnRecord.IsChecked = false;
-            return;
-        }
-        recordFolder = dlg.FolderName;
+        recordFolder = Path.Combine(Path.GetTempPath(), "LifeSymulator_" + DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+        Directory.CreateDirectory(recordFolder);
         frameNumber = 0;
         recording = true;
         btnRecord.Content = "Stop recording";
         SaveFrame(); // current state is the first frame
     }
 
-    private void btnRecord_Unchecked(object sender, RoutedEventArgs e)
+    private async void btnRecord_Unchecked(object sender, RoutedEventArgs e)
     {
         if (!recording) return;
         recording = false;
-        btnRecord.Content = "Record frames";
-        txtRecord.Text = $"Saved {frameNumber} frames. Video: ffmpeg -framerate 10 -i frame_%05d.png out.mp4";
+        btnRecord.Content = "Record video";
+
+        string? ffmpeg = VideoMaker.FindFfmpeg();
+        if (ffmpeg == null)
+        {
+            txtRecord.Text = $"{frameNumber} frames saved in {recordFolder}";
+            MessageBox.Show("ffmpeg.exe not found (put it next to LifeSymulator.exe or on PATH).\n" +
+                            "Frames are saved in:\n" + recordFolder);
+            return;
+        }
+
+        var dlg = new SaveFileDialog();
+        dlg.Filter = "MP4 video (*.mp4)|*.mp4";
+        dlg.FileName = "life.mp4";
+        if (dlg.ShowDialog() != true)
+        {
+            DeleteFrames();
+            txtRecord.Text = "Recording cancelled";
+            return;
+        }
+
+        // video speed = simulation speed from the slider
+        int fps = Math.Max(1, (int)Math.Round(sliderSpeed.Value));
+        btnRecord.IsEnabled = false;
+        txtRecord.Text = $"Making video from {frameNumber} frames...";
+        string? error = await VideoMaker.MakeVideo(ffmpeg, recordFolder, fps, dlg.FileName);
+        btnRecord.IsEnabled = true;
+
+        if (error == null)
+        {
+            DeleteFrames();
+            txtRecord.Text = "Video saved: " + dlg.FileName;
+        }
+        else
+        {
+            txtRecord.Text = "Video failed, frames are in " + recordFolder;
+            MessageBox.Show("ffmpeg error:\n" + error);
+        }
+    }
+
+    void DeleteFrames()
+    {
+        try { Directory.Delete(recordFolder, true); }
+        catch { } // not important if temp files stay
     }
 
     private void btnSave_Click(object sender, RoutedEventArgs e)
