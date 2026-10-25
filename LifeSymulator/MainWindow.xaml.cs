@@ -275,7 +275,7 @@ public partial class MainWindow : Window
 
     void UpdateStats()
     {
-        txtGeneration.Text = "Generation: " + generation;
+        txtGeneration.Text = "Generation: " + world.Generation;
         txtPlants.Text = "Plants: " + world.PlantCount();
         txtAnimals.Text = "Animals: " + world.AnimalCount();
         // last step (total)
@@ -325,7 +325,6 @@ public partial class MainWindow : Window
         var rules = world.Rules;
         world = new World(w, h);
         world.Rules = rules;
-        generation = 0;
         CreateBoard();
         FitBoard(true);
     }
@@ -334,7 +333,6 @@ public partial class MainWindow : Window
     {
         world.Clear();
         world.ResetStats();
-        generation = 0;
         RefreshBoard();
     }
 
@@ -342,11 +340,8 @@ public partial class MainWindow : Window
     {
         world.Randomize();
         world.ResetStats();
-        generation = 0;
         RefreshBoard();
     }
-
-    int generation = 0;
 
     private void btnStep_Click(object sender, RoutedEventArgs e)
     {
@@ -393,7 +388,6 @@ public partial class MainWindow : Window
     void DoStep()
     {
         world.Step();
-        generation++;
         RefreshBoard();
     }
 
@@ -448,8 +442,7 @@ public partial class MainWindow : Window
             try
             {
                 world = SaveLoad.Load(dlg.FileName);
-                generation = 0;
-                txtWidth.Text = world.Width.ToString();
+                        txtWidth.Text = world.Width.ToString();
                 txtHeight.Text = world.Height.ToString();
                 CreateBoard();
                 ShowRules();

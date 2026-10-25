@@ -6,6 +6,7 @@ namespace LifeSymulator.Model
         public int Height;
         public Cell[,] Cells;
         public Rules Rules = new Rules();
+        public int Generation = 0; // number of steps done (saved to file too)
 
         Random rnd = new Random();
         Cell[,]? spare; // buffer for the next generation
@@ -46,6 +47,7 @@ namespace LifeSymulator.Model
 
         public void Clear()
         {
+            Generation = 0;
             for (int x = 0; x < Width; x++)
                 for (int y = 0; y < Height; y++)
                     Cells[x, y] = new Cell();
@@ -205,6 +207,7 @@ namespace LifeSymulator.Model
 
             spare = old;
             Cells = next;
+            Generation++;
         }
 
         // checks the new grid so two animals never end up on the same field
