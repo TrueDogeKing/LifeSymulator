@@ -200,6 +200,37 @@ namespace LifeSymulator
             }
         }
 
+        // whole board as a picture (for saving to file), independent of zoom
+        // uses colors, cellPx = how many pixels one cell takes in the picture
+        public BitmapSource? RenderWholeBoard(int cellPx)
+        {
+            if (World == null) return null;
+            int w = World.Width * cellPx, h = World.Height * cellPx;
+            int[] img = new int[w * h];
+            int empty = ToInt(EmptyColor), plant = ToInt(PlantColor), animal = ToInt(AnimalColor), both = ToInt(BothColor);
+            for (int y = 0; y < World.Height; y++)
+            {
+                for (int x = 0; x < World.Width; x++)
+                {
+                    Cell c = World.Cells[x, y];
+                    int col = empty;
+                    if (c.HasPlant && c.HasAnimal) col = both;
+                    else if (c.HasAnimal) col = animal;
+                    else if (c.HasPlant) col = plant;
+                    // fill cellPx x cellPx square
+                    for (int py = 0; py < cellPx; py++)
+                    {
+                        int row = (y * cellPx + py) * w + x * cellPx;
+                        for (int px = 0; px < cellPx; px++)
+                            img[row + px] = col;
+                    }
+                }
+            }
+            var result = BitmapSource.Create(w, h, 96, 96, PixelFormats.Bgra32, null, img, w * 4);
+            result.Freeze();
+            return result;
+        }
+
         // position on screen -> cell, false if outside
         public bool GetCell(Point p, out int x, out int y)
         {

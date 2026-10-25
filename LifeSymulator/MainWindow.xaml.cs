@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.IO;
 using Microsoft.Win32;
 using LifeSymulator.Model;
 
@@ -388,6 +389,7 @@ public partial class MainWindow : Window
     void DoStep()
     {
         world.Step();
+        if (recording) SaveFrame();
         RefreshBoard();
     }
 
@@ -420,6 +422,80 @@ public partial class MainWindow : Window
         {
             MessageBox.Show("Wrong rules: " + ex.Message);
         }
+    }
+
+    // ---------- export to images ----------
+
+    bool recording = false;
+    string recordFolder = "";
+    int frameNumber = 0;
+
+    // picture should not be huge: about 2000 px on the longer side, 1..10 px per cell
+    int ExportCellSize()
+    {
+        int n = Math.Max(world.Width, world.Height);
+        return Math.Max(1, Math.Min(10, 2000 / n));
+    }
+
+    void SavePng(string path)
+    {
+        var bmp = board.RenderWholeBoard(ExportCellSize());
+        if (bmp == null) return;
+        var enc = new PngBitmapEncoder();
+        enc.Frames.Add(BitmapFrame.Create(bmp));
+        using (var f = File.Create(path))
+            enc.Save(f);
+    }
+
+    private void btnSaveImage_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new SaveFileDialog();
+        dlg.Filter = "PNG image (*.png)|*.png";
+        dlg.FileName = "board_" + world.Generation + ".png";
+        if (dlg.ShowDialog() == true)
+        {
+            try { SavePng(dlg.FileName); }
+            catch (Exception ex) { MessageBox.Show("Could not save image: " + ex.Message); }
+        }
+    }
+
+    void SaveFrame()
+    {
+        frameNumber++;
+        try
+        {
+            SavePng(Path.Combine(recordFolder, $"frame_{frameNumber:D5}.png"));
+            txtRecord.Text = $"Recording: {frameNumber} frames in {recordFolder}";
+        }
+        catch (Exception ex)
+        {
+            btnRecord.IsChecked = false;
+            MessageBox.Show("Could not save frame: " + ex.Message);
+        }
+    }
+
+    private void btnRecord_Checked(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog();
+        dlg.Title = "Folder for frames";
+        if (dlg.ShowDialog() != true)
+        {
+            btnRecord.IsChecked = false;
+            return;
+        }
+        recordFolder = dlg.FolderName;
+        frameNumber = 0;
+        recording = true;
+        btnRecord.Content = "Stop recording";
+        SaveFrame(); // current state is the first frame
+    }
+
+    private void btnRecord_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (!recording) return;
+        recording = false;
+        btnRecord.Content = "Record frames";
+        txtRecord.Text = $"Saved {frameNumber} frames. Video: ffmpeg -framerate 10 -i frame_%05d.png out.mp4";
     }
 
     private void btnSave_Click(object sender, RoutedEventArgs e)
